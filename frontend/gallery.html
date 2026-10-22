@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Thai Gallery Pro</title>
+
+    <!-- Leaflet ใช้แสดงแผนที่ประเทศไทย -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet/dist/leaflet.css"
+    >
+
+    <!-- CSS หลักของเว็บไซต์ -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- =========================
+         Header
+         ปุ่มเข้าสู่ระบบและออกจากระบบ
+         จะสลับการแสดงผลตามสถานะสมาชิก
+    ========================== -->
+    <header class="site-header">
+        <div class="container header-inner">
+
+            <div class="brand">
+                <div class="brand-icon">🌄</div>
+
+                <div>
+                    <h1>วิจิตรสยาม</h1>
+                    <p></p>
+                </div>
+            </div>
+
+            <!-- แสดงเมื่อยังไม่ได้เข้าสู่ระบบ -->
+            <button
+                type="button"
+                id="auth-open-button"
+                class="auth-open-button"
+                aria-haspopup="dialog"
+                aria-controls="auth-modal"
+            >
+                เข้าสู่ระบบ
+            </button>
+
+            <!-- แสดงเมนูบัญชีเมื่อเข้าสู่ระบบแล้ว -->
+            <details id="auth-user-menu" class="account-menu" hidden>
+                <summary>เมนูสมาชิก</summary>
+                <div class="account-menu-items">
+                    <a href="admin/dashboard.html" id="admin-dashboard-link" hidden>
+                        Admin Dashboard
+                    </a>
+                    <a href="user/dashboard.html" id="user-dashboard-link" hidden>
+                        ภาพถ่ายของฉัน
+                    </a>
+                    <button type="button" id="auth-logout-button" hidden>
+                        ออกจากระบบ
+                    </button>
+                </div>
+            </details>
+
+        </div>
+    </header>
+
+    <!-- =========================
+         Authentication Modal
+         หน้าต่างเข้าสู่ระบบและสมัครสมาชิก
+    ========================== -->
+    <div id="auth-modal" class="auth-modal" hidden>
+        <section
+            class="auth-modal-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="auth-modal-title"
+            aria-describedby="auth-modal-description"
+        >
+            <button
+                type="button"
+                id="auth-modal-close"
+                class="auth-modal-close"
+                aria-label="ปิดหน้าต่าง"
+            >
+                &times;
+            </button>
+
+            <!-- ส่วนหัวของบัตรสมาชิก -->
+            <div class="gallery-ticket-header">
+
+                <div class="gallery-ticket-content">
+                    <div class="gallery-ticket-brand">
+                        <div class="gallery-ticket-logo" aria-hidden="true">⌁</div>
+
+                        <div>
+                            <h2 class="gallery-ticket-brand-name">
+                                Thai Gallery <span>Pro</span>
+                            </h2>
+
+                            <p class="gallery-ticket-tagline">
+                                EXPLORE THAILAND THROUGH PHOTOS
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="gallery-ticket-divider"></div>
+
+                    <h2 id="auth-modal-title">ยินดีต้อนรับ</h2>
+
+                    <p id="auth-modal-description">
+                        เข้าสู่ระบบหรือสมัครสมาชิก
+                        <strong>Thai Gallery Pro</strong>
+                        เพื่อสำรวจภาพถ่ายจากทั่วโลกและแบ่งปันภาพถ่ายของคุณเอง
+                    </p>
+                </div>
+
+                <div class="gallery-ticket-side" aria-hidden="true">
+                    <span>GALLERY TICKET</span>
+                    <div class="gallery-ticket-barcode"></div>
+                </div>
+            </div>
+
+            <!-- แท็บเข้าสู่ระบบและสมัครสมาชิก -->
+            <div
+                class="auth-slide-tabs"
+                role="tablist"
+                aria-label="บัญชีผู้ใช้"
+            >
+                <button
+                    type="button"
+                    id="auth-choice-login"
+                    class="auth-slide-tab is-active"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="auth-login-form"
+                >
+                    เข้าสู่ระบบ
+                </button>
+
+                <button
+                    type="button"
+                    id="auth-choice-register"
+                    class="auth-slide-tab"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="auth-register-form"
+                >
+                    สมัครสมาชิก
+                </button>
+            </div>
+
+            <!-- พื้นที่เลื่อนระหว่างฟอร์ม Login และ Register -->
+            <div class="auth-slide-viewport">
+                <div class="auth-slide-track" id="auth-slide-track">
+
+                    <!-- ฟอร์มเข้าสู่ระบบ -->
+                    <form id="auth-login-form" class="auth-slide-form">
+                        <h3>เข้าสู่ระบบ</h3>
+
+                        <label for="login-username">ชื่อผู้ใช้</label>
+                        <input
+                            type="text"
+                            id="login-username"
+                            name="username"
+                            autocomplete="username"
+                            placeholder="กรอกชื่อผู้ใช้"
+                            required
+                        >
+
+                        <label for="login-password">รหัสผ่าน</label>
+                        <input
+                            type="password"
+                            id="login-password"
+                            name="password"
+                            autocomplete="current-password"
+                            placeholder="กรอกรหัสผ่าน"
+                            required
+                        >
+
+                        <!-- แสดงผลสำเร็จหรือข้อผิดพลาดจากการ Login -->
+                        <p
+                            id="login-message"
+                            role="status"
+                            aria-live="polite"
+                        ></p>
+
+                        <button
+                            type="submit"
+                            class="auth-choice-button auth-slide-submit"
+                            id="auth-login-submit"
+                        >
+                            เข้าสู่ระบบ
+                        </button>
+                    </form>
+
+                    <!-- ฟอร์มสมัครสมาชิก -->
+                    <form id="auth-register-form" class="auth-slide-form">
+                        <h3>สร้างบัญชีใหม่</h3>
+
+                        <label for="register-username">ชื่อผู้ใช้</label>
+                        <input
+                            type="text"
+                            id="register-username"
+                            name="username"
+                            autocomplete="username"
+                            placeholder="ตั้งชื่อผู้ใช้"
+                            required
+                        >
+
+                        <label for="register-password">รหัสผ่าน</label>
+                        <input
+                            type="password"
+                            id="register-password"
+                            name="password"
+                            autocomplete="new-password"
+                            placeholder="ตั้งรหัสผ่าน"
+                            required
+                        >
+
+                        <!-- แสดงผลสำเร็จหรือข้อผิดพลาดจากการสมัคร -->
+                        <p
+                            id="register-message"
+                            role="status"
+                            aria-live="polite"
+                        ></p>
+
+                        <button
+                            type="submit"
+                            class="auth-choice-button auth-slide-submit"
+                            id="auth-register-submit"
+                        >
+                            สมัครสมาชิก
+                        </button>
+                    </form>
+
+                </div>
+            </div>
+
+            <!-- ส่วนท้ายของบัตรสมาชิก -->
+            <div class="auth-ticket-footer" aria-hidden="true">
+                <span></span>
+                <small>THAI GALLERY PRO</small>
+                <span></span>
+            </div>
+
+        </section>
+    </div>
+
+    <!-- =========================
+         Main
+    ========================== -->
+    <main>
+
+        <!-- Hero -->
+        <section class="hero">
+            <div class="container">
+
+                <h2>Wichit Siam</h2>
+
+                <p>
+                    เก็บภาพ เล่าเรื่อง รำลึกวันวาน
+                </p>
+
+            </div>
+        </section>
+
+        <!-- Region Filter -->
+        <section class="filter-section">
+            <div class="container">
+
+                <div class="section-heading">
+                    <h2>เลือกภูมิภาค</h2>
+                    <p>ค้นหาภาพถ่ายตามภูมิภาคของประเทศไทย</p>
+                </div>
+
+                <div class="province-search">
+
+                    <label for="province-search-input">
+                        ค้นหาจังหวัด
+                    </label>
+
+                    <div class="search-input-wrapper">
+                        <span class="search-icon">🔎</span>
+
+                        <input
+                            type="search"
+                            id="province-search-input"
+                            placeholder="ค้นหาจังหวัด..."
+                            autocomplete="off"
+                        >
+                    </div>
+
+                </div>
+
+                <div class="region-filters">
+                    <button
+                        type="button"
+                        class="active"
+                        onclick="filterRegion('all')"
+                    >
+                        ทั้งหมด
+                    </button>
+
+                    <button
+                        type="button"
+                        onclick="filterRegion('เหนือ')"
+                    >
+                        ภาคเหนือ
+                    </button>
+
+                    <button
+                        type="button"
+                        onclick="filterRegion('ตะวันออกเฉียงเหนือ')"
+                    >
+                        ภาคตะวันออกเฉียงเหนือ
+                    </button>
+
+                    <button
+                        type="button"
+                        onclick="filterRegion('กลาง')"
+                    >
+                        ภาคกลาง
+                    </button>
+
+                    <button
+                        type="button"
+                        onclick="filterRegion('ตะวันออก')"
+                    >
+                        ภาคตะวันออก
+                    </button>
+
+                    <button
+                        type="button"
+                        onclick="filterRegion('ตะวันตก')"
+                    >
+                        ภาคตะวันตก
+                    </button>
+
+                    <button
+                        type="button"
+                        onclick="filterRegion('ใต้')"
+                    >
+                        ภาคใต้
+                    </button>
+
+                    <button
+                        type="button"
+                        class="filter-reset"
+                        onclick="resetFilters()"
+                    >
+                        ↺ ล้างตัวกรอง
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Map -->
+        <section class="map-section">
+            <div class="container">
+
+                <div class="section-heading">
+                    <h2>🗺️ แผนที่</h2>
+                    <p>ดูตำแหน่งของภาพถ่ายบนแผนที่</p>
+                </div>
+
+                <div id="map"></div>
+
+            </div>
+        </section>
+
+        <!-- Gallery -->
+        <section class="gallery-section">
+            <div class="container">
+
+                <div class="section-heading">
+                    <h2>📸 ภาพวันวาน</h2>
+                    <p>ภาพถ่ายจากสถานที่ต่าง ๆ ในประเทศไทย</p>
+                </div>
+
+                <div
+                    id="filter-result-count"
+                    class="filter-result-count"
+                >
+                    พบ 0 ภาพ
+                </div>
+
+                <div id="gallery">
+                    <div class="gallery-loading">
+                        <div class="loading-spinner"></div>
+                        <p>กำลังโหลดภาพถ่าย...</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- =========================
+         Footer
+    ========================== -->
+    <footer class="site-footer">
+        <div class="container">
+            <p>© 2026 Wichit Siam</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <script type="module" src="js/app.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Dashboard | Thai Gallery Pro</title>
+
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="container header-inner">
+            <div class="brand">
+                <div class="brand-icon">🌄</div>
+                <div>
+                    <h1>Thai Gallery Pro</h1>
+                    <p>Admin Dashboard</p>
+                </div>
+            </div>
+
+            <nav class="admin-dashboard-nav" aria-label="เมนูหลัก">
+                <a href="../gallery.html">กลับไปหน้า Gallery</a>
+                <button
+                    type="button"
+                    id="admin-logout-button"
+                    class="auth-open-button"
+                >
+                    ออกจากระบบ
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="admin-dashboard" aria-labelledby="admin-dashboard-title">
+            <h2 id="admin-dashboard-title">จัดการรูปภาพ</h2>
+            <p id="admin-welcome" role="status">กำลังตรวจสอบสิทธิ์...</p>
+            <p id="admin-photo-count" aria-live="polite"></p>
+            <div id="admin-photo-list" aria-live="polite">
+                กำลังโหลดรายการรูปภาพ...
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="dashboard.js"></script>
+</body>
+</html>

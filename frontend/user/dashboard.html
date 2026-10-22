@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dashboard | Thai Gallery Pro</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="container header-inner">
+            <div class="brand">
+                <div class="brand-icon" aria-hidden="true">🌄</div>
+                <div>
+                    <h1>Thai Gallery Pro</h1>
+                    <p>ภาพถ่ายของฉัน</p>
+                </div>
+            </div>
+            <nav class="user-dashboard-nav" aria-label="เมนูสมาชิก">
+                <details class="account-menu">
+                    <summary>เมนูสมาชิก</summary>
+                    <div class="account-menu-items">
+                        <a href="../admin/dashboard.html" id="admin-dashboard-link" hidden>Admin Dashboard</a>
+                        <a href="#user-dashboard">ภาพถ่ายของฉัน</a>
+                        <a href="../gallery.html">กลับไปหน้า Gallery</a>
+                        <button type="button" id="user-dashboard-logout">ออกจากระบบ</button>
+                    </div>
+                </details>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section id="user-dashboard" aria-labelledby="user-dashboard-title">
+            <div class="dashboard-heading-row">
+                <h2 id="user-dashboard-title">ภาพถ่ายของฉัน</h2>
+                <button type="button" id="open-photo-form" class="photo-form-button photo-form-primary">
+                    + โพสต์รูปใหม่
+                </button>
+            </div>
+            <p id="user-dashboard-welcome" role="status">กำลังตรวจสอบสถานะสมาชิก...</p>
+            <p id="user-dashboard-message" role="status" aria-live="polite"></p>
+            <div id="user-photo-count" aria-live="polite">กำลังโหลดภาพถ่าย...</div>
+            <div id="user-photo-list"><!-- JavaScript จะแสดงภาพถ่ายของสมาชิกที่นี่ --></div>
+        </section>
+    </main>
+
+    <dialog id="photo-upload-dialog" class="photo-form-dialog" aria-labelledby="photo-upload-title">
+        <h2 id="photo-upload-title">โพสต์รูปใหม่</h2>
+        <p>เลือกตำแหน่งจากแผนที่ได้โดยไม่ต้องเปิดใช้ GPS ของอุปกรณ์</p>
+        <form id="photo-upload-form" class="photo-form" enctype="multipart/form-data">
+            <div>
+                <label for="photo-image">ไฟล์รูปภาพ (JPG, PNG หรือ WebP ไม่เกิน 2 MB)</label>
+                <input type="file" id="photo-image" name="image"
+                    accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" required>
+            </div>
+            <div>
+                <label for="photo-title">ชื่อภาพ</label>
+                <input type="text" id="photo-title" name="title" minlength="3" required>
+            </div>
+            <div>
+                <label for="photo-description">รายละเอียดภาพ (ไม่บังคับ, ไม่เกิน 500 ตัวอักษร)</label>
+                <textarea id="photo-description" name="description" maxlength="500"></textarea>
+            </div>
+
+            <div class="photo-form-grid">
+                <div>
+                    <label for="photo-province">จังหวัด</label>
+                    <input type="text" id="photo-province" name="province" maxlength="100" required>
+                </div>
+                <div>
+                    <label for="photo-region">ภูมิภาค</label>
+                    <select id="photo-region" name="region" required>
+                        <option value="">เลือกภูมิภาค</option>
+                        <option value="เหนือ">ภาคเหนือ</option>
+                        <option value="ตะวันออกเฉียงเหนือ">ภาคตะวันออกเฉียงเหนือ</option>
+                        <option value="กลาง">ภาคกลาง</option>
+                        <option value="ตะวันออก">ภาคตะวันออก</option>
+                        <option value="ตะวันตก">ภาคตะวันตก</option>
+                        <option value="ใต้">ภาคใต้</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="photo-date">วันที่ถ่ายภาพ</label>
+                    <input type="date" id="photo-date" name="date" required>
+                </div>
+                <div>
+                    <label for="photo-activity">กิจกรรม / ประเภทภาพ</label>
+                    <input type="text" id="photo-activity" name="activity" maxlength="100"
+                        placeholder="เช่น ธรรมชาติ, วัฒนธรรม" required>
+                </div>
+            </div>
+
+            <div>
+                <h3>เลือกตำแหน่งบนแผนที่</h3>
+                <p class="photo-form-help">คลิกบนแผนที่เพื่อปักหมุด หรือแก้พิกัดตัวเลขด้านล่างได้เอง</p>
+                <div id="photo-location-map" aria-label="แผนที่เลือกตำแหน่งภาพถ่าย"></div>
+            </div>
+
+            <div class="photo-form-grid">
+                <div>
+                    <label for="photo-latitude">Latitude (ละติจูด)</label>
+                    <input type="number" id="photo-latitude" name="latitude" min="-90" max="90" step="any" required>
+                </div>
+                <div>
+                    <label for="photo-longitude">Longitude (ลองจิจูด)</label>
+                    <input type="number" id="photo-longitude" name="longitude" min="-180" max="180" step="any" required>
+                </div>
+            </div>
+
+            <p id="photo-upload-message" role="status" aria-live="polite"></p>
+            <div class="photo-form-actions">
+                <button type="button" id="cancel-photo-form" class="photo-form-button photo-form-secondary">
+                    ยกเลิกโพสต์
+                </button>
+                <button type="submit" id="submit-photo-form" class="photo-form-button photo-form-primary">
+                    โพสต์รูป
+                </button>
+            </div>
+        </form>
+    </dialog>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+
+</html>

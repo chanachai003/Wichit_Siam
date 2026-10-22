@@ -1,0 +1,29 @@
+
+# Environment secrets
+.env
+.env.*
+
+# check files data
+check-photo-owners.cjs
+check-regions.js
+check-role.cjs
+set-admin-role.cjs
+
+# Dependencies
+node_modules/
+
+# SQLite databases
+*.sqlite
+*.sqlite3
+*.db
+
+# Uploaded user images
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Logs
+*.log
+
+# Operating system
+.DS_Store
+Thumbs.db
