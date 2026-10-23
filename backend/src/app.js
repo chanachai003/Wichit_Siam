@@ -25,9 +25,16 @@ const allowedOrigins = new Set([
         .filter(Boolean)
 ]);
 
+const vercelPreviewOrigin =
+    /^https:\/\/wichitsiam-frontend-[a-z0-9-]+-chanachai003\.vercel\.app$/;
+
 app.use(cors({
     origin(origin, callback) {
-        if (!origin || allowedOrigins.has(origin)) {
+        if (
+            !origin ||
+            allowedOrigins.has(origin) ||
+            vercelPreviewOrigin.test(origin)
+        ) {
             callback(null, true);
             return;
         }
