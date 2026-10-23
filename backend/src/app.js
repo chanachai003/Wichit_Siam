@@ -23,6 +23,10 @@ app.use(express.json());
 // serve uploads (สำคัญมาก)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+app.get('/', (req, res) => {
+    res.json({ message: 'Wichit Siam API is running' });
+});
+
 // import routes
 import authRoutes from './routes/auth.js';
 import photoRoutes from './routes/photos.js';
@@ -53,6 +57,7 @@ app.use((err, req, res, next) => {
 });
 
 // start server
-app.listen(4000, () => {
-    console.log('Server running on http://localhost:4000');
+const port = process.env.PORT || 4000;
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Server running on port ${port}`);
 });
