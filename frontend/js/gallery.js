@@ -22,6 +22,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 ========================================================= */
 
 const gallery = document.getElementById('gallery');
+const API_BASE_URL = window.API_BASE_URL;
 
 let isLoadingPhotos = false;
 let photosLoadFailed = false;
@@ -50,7 +51,7 @@ async function loadPhotos() {
     `;
 
     try {
-        const response = await fetch('http://localhost:4000/api/photos');
+        const response = await fetch(`${API_BASE_URL}/api/photos`);
 
         if (!response.ok) {
             throw new Error('ไม่สามารถโหลดรูปภาพได้');
@@ -241,7 +242,7 @@ function renderMarkers(data) {
         const popupImage = document.createElement('img');
 
         popupImage.className = 'map-popup-image';
-        popupImage.src = `http://localhost:4000${photo.image_url}`;
+        popupImage.src = `${API_BASE_URL}${photo.image_url}`;
         popupImage.alt = photo.title || 'Thailand Gallery photo';
         popupImage.loading = 'lazy';
 
@@ -303,7 +304,7 @@ function renderGallery(data) {
 
         const img = document.createElement('img');
 
-        img.src = `http://localhost:4000${photo.image_url}`;
+        img.src = `${API_BASE_URL}${photo.image_url}`;
         img.alt = photo.title || 'Thailand Gallery photo';
         img.loading = 'lazy';
 

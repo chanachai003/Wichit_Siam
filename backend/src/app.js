@@ -15,8 +15,25 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // CORS config
+const allowedOrigins = new Set([
+    'http://localhost:5500',
+    'http://127.0.0.1:5500',
+    'https://wichitsiam-frontend.vercel.app',
+    ...(process.env.CORS_ORIGINS || '')
+        .split(',')
+        .map(origin => origin.trim())
+        .filter(Boolean)
+]);
+
 app.use(cors({
-    origin: 'http://127.0.0.1:5500'
+    origin(origin, callback) {
+        if (!origin || allowedOrigins.has(origin)) {
+            callback(null, true);
+            return;
+        }
+
+        callback(new Error(`Origin ${origin} is not allowed by CORS`));
+    }
 }));
 app.use(express.json());
 

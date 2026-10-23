@@ -1,6 +1,6 @@
 // เก็บตัวแปรและการทำงานของหน้า Dashboard ไว้ภายใน scope เดียว
 (() => {
-    const API_BASE_URL = 'http://localhost:4000';
+    const API_BASE_URL = window.API_BASE_URL;
     const TOKEN_KEY = 'thaiGalleryToken';
     const welcome = document.getElementById('user-dashboard-welcome');
     const message = document.getElementById('user-dashboard-message');

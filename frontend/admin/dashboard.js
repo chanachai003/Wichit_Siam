@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:4000';
+const API_BASE_URL = window.API_BASE_URL;
 const TOKEN_KEY = 'thaiGalleryToken';
 
 const welcome = document.getElementById('admin-welcome');
