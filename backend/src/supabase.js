@@ -2,11 +2,11 @@ import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const serviceRoleKey = process.env.SUPABASE_SECRET_KEY;
 
 if (!supabaseUrl || !serviceRoleKey) {
   throw new Error(
-    'SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for Supabase Storage'
+    'SUPABASE_URL and SUPABASE_SECRET_KEY are required for Supabase Storage'
   );
 }
 
