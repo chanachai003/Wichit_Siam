@@ -3,13 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import express from 'express';
-import path from 'path';
 import cors from 'cors';
-import { fileURLToPath } from 'url';
-
-// สร้าง __dirname (สำคัญมากใน ES Module)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // init app
 const app = express();
@@ -44,9 +38,6 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// serve uploads (สำคัญมาก)
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-
 app.get('/', (req, res) => {
     res.json({ message: 'Wichit Siam API is running' });
 });
@@ -70,6 +61,12 @@ app.use((err, req, res, next) => {
     }
 
     if (err.name === 'MulterError') {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(413).json({
+                message: 'ไฟล์รูปภาพต้องมีขนาดไม่เกิน 2 MB'
+            });
+        }
+
         return res.status(400).json({ message: err.message });
     }
 

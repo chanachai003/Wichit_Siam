@@ -1,42 +1,18 @@
-import path from 'path';
 import express from 'express';
 import multer from 'multer';
 import { randomUUID } from 'crypto';
 import db from '../db.js';
+import { storageBucket, supabase } from '../supabase.js';
 import auth from '../models/authMiddleware.js';
 import isAdmin from '../middleware/isAdmin.js';
-import fs from 'fs';
-import { fileTypeFromFile } from 'file-type';
+import { fileTypeFromBuffer } from 'file-type';
 import { photoValidation } from '../middleware/validatePhoto.js';
 import { validateResult } from '../middleware/validateResult.js';
-import { fileURLToPath } from 'url';
 
 const router = express.Router();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
-
-// Upload config (SECURE)
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../../uploads'));
-  },
-  filename: (req, file, cb) => {
-    const extensions = {
-      'image/jpeg': '.jpg',
-      'image/png': '.png',
-      'image/webp': '.webp'
-    };
-
-    const extension = extensions[file.mimetype];
-
-    cb(null, `${randomUUID()}${extension}`);
-  }
-});
-
-// Multer config
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
   fileFilter: (req, file, cb) => {
     const allowed = ['image/jpeg', 'image/png', 'image/webp'];
@@ -47,7 +23,6 @@ const upload = multer({
   }
 });
 
-// Middleware to verify image type
 const verifyImageType = async (req, res, next) => {
   if (!req.file) {
     return res.status(400).json({
@@ -56,24 +31,19 @@ const verifyImageType = async (req, res, next) => {
   }
 
   try {
-    const fileType = await fileTypeFromFile(req.file.path);
+    const fileType = await fileTypeFromBuffer(req.file.buffer);
 
-    const allowedTypes = {
-      'image/jpeg': 'jpg',
-      'image/png': 'png',
-      'image/webp': 'webp'
-    };
+    const allowedMimeTypes = new Set([
+      'image/jpeg',
+      'image/png',
+      'image/webp'
+    ]);
 
     if (
       !fileType ||
-      !allowedTypes[fileType.mime]
+      !allowedMimeTypes.has(fileType.mime) ||
+      fileType.mime !== req.file.mimetype
     ) {
-      fs.unlink(req.file.path, (unlinkErr) => {
-        if (unlinkErr) {
-          console.error('Delete invalid file error:', unlinkErr);
-        }
-      });
-
       return res.status(400).json({
         message: 'ไฟล์รูปภาพไม่ถูกต้อง'
       });
@@ -82,12 +52,6 @@ const verifyImageType = async (req, res, next) => {
     next();
   } catch (err) {
     console.error('File type detection error:', err);
-
-    fs.unlink(req.file.path, (unlinkErr) => {
-      if (unlinkErr) {
-        console.error('Delete invalid file error:', unlinkErr);
-      }
-    });
 
     return res.status(400).json({
       message: 'ไม่สามารถตรวจสอบไฟล์รูปภาพได้'
@@ -103,9 +67,7 @@ router.post(
   verifyImageType,
   photoValidation,
   validateResult,
-  (req, res) => {
-
-
+  async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: 'ต้องอัปโหลดรูปภาพ' });
     }
@@ -121,139 +83,151 @@ router.post(
       longitude
     } = req.body;
 
-    const imageUrl = `/uploads/${req.file.filename}`;
-    const userId = req.user.id;
+    const fileExtensions = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp'
+    };
+    const objectPath =
+      `photos/${randomUUID()}.${fileExtensions[req.file.mimetype]}`;
+    let imageUploaded = false;
 
-    db.run(
-      `INSERT INTO photos
-      (title, description, province, region, date, activity, latitude, longitude, image_url, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [title, description, province, region, date, activity, latitude, longitude, imageUrl, userId],
-      function (err) {
-        if (err) {
-          console.error(err);
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from(storageBucket)
+        .upload(objectPath, req.file.buffer, {
+          contentType: req.file.mimetype,
+          cacheControl: '3600',
+          upsert: false
+        });
 
-          // Remove uploaded file if database insert fails
-          fs.unlink(req.file.path, (unlinkErr) => {
-            if (unlinkErr) {
-              console.error('Delete orphan file error:', unlinkErr);
-            }
-          });
-
-          return res.status(500).json({
-            message: 'Internal Server Error'
-          });
-        }
-
-        res.json({ id: this.lastID });
+      if (uploadError) {
+        throw uploadError;
       }
-    );
+      imageUploaded = true;
+
+      const imageUrl = supabase.storage
+        .from(storageBucket)
+        .getPublicUrl(objectPath)
+        .data.publicUrl;
+
+      const result = await db.query(
+        `INSERT INTO photos
+         (title, description, province, region, date, activity, latitude, longitude, image_url, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         RETURNING id`,
+        [
+          title,
+          description || '',
+          province,
+          region,
+          date,
+          activity,
+          latitude,
+          longitude,
+          imageUrl,
+          req.user.id
+        ]
+      );
+
+      res.json({ id: result.rows[0].id });
+    } catch (err) {
+      console.error('Save photo failed:', err);
+
+      if (imageUploaded) {
+        try {
+          const { error: cleanupError } = await supabase.storage
+            .from(storageBucket)
+            .remove([objectPath]);
+          if (cleanupError) {
+            console.error('Delete orphan Supabase image error:', cleanupError);
+          }
+        } catch (cleanupError) {
+          console.error('Delete orphan Supabase image error:', cleanupError);
+        }
+      }
+
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
   }
 );
 
 // GET (เพิ่ม limit)
-router.get('/', (req, res) => {
-  db.all("SELECT * FROM photos LIMIT 50", [], (err, rows) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ message: 'Internal Server Error' });
-    }
-    res.json(rows);
-  });
+router.get('/', async (req, res) => {
+  const result = await db.query('SELECT * FROM photos LIMIT 50');
+  res.json(result.rows);
 });
 
 /* ADMIN: GET ALL PHOTOS */
-router.get('/admin/all', auth, isAdmin, (req, res) => {
-  db.all(
+router.get('/admin/all', auth, isAdmin, async (req, res) => {
+  const result = await db.query(
     `SELECT photos.*, users.username AS created_by_username
      FROM photos
      LEFT JOIN users ON photos.created_by = users.id
-     ORDER BY photos.created_at DESC`,
-    [],
-    (err, rows) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({
-          message: 'Internal Server Error'
-        });
-      }
-
-      res.json(rows);
-    }
+     ORDER BY photos.created_at DESC`
   );
+  res.json(result.rows);
 });
 
 /* USER: GET MY PHOTOS */
-router.get('/my', auth, (req, res) => {
-  db.all(
+router.get('/my', auth, async (req, res) => {
+  const result = await db.query(
     `SELECT *
      FROM photos
-     WHERE created_by = ?
+     WHERE created_by = $1
      ORDER BY created_at DESC`,
-    [req.user.id],
-    (err, rows) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({
-          message: 'Internal Server Error'
-        });
-      }
-
-      res.json(rows);
-    }
+    [req.user.id]
   );
+  res.json(result.rows);
 });
 
 // DELETE (Owner + Admin)
-router.delete('/:id', auth, (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   const { id } = req.params;
 
-  db.get("SELECT * FROM photos WHERE id = ?", [id], (err, photo) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ message: 'Internal Server Error' });
+  if (!/^[1-9]\d*$/.test(id)) {
+    return res.status(404).json({ message: 'Photo not found' });
+  }
+
+  const result = await db.query('SELECT * FROM photos WHERE id = $1', [id]);
+  const photo = result.rows[0];
+
+  if (!photo) return res.status(404).json({ message: 'Photo not found' });
+
+  const isOwner = photo.created_by === req.user.id;
+  const hasAdminRole = req.user.role === 'admin';
+
+  if (!isOwner && !hasAdminRole) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
+  try {
+    const publicUrlPrefix = supabase.storage
+      .from(storageBucket)
+      .getPublicUrl('')
+      .data.publicUrl;
+
+    if (!photo.image_url.startsWith(publicUrlPrefix)) {
+      throw new Error('Image URL does not belong to the configured storage bucket');
     }
 
-    if (!photo) return res.status(404).json({ message: 'Photo not found' });
+    const objectPath = photo.image_url.slice(publicUrlPrefix.length);
+    const { error } = await supabase.storage
+      .from(storageBucket)
+      .remove([objectPath]);
 
-    const isOwner = photo.created_by === req.user.id;
-    const isAdmin = req.user.role === 'admin';
-
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({ message: 'Forbidden' });
+    if (error) {
+      throw error;
     }
 
-    // safe path
-    const imagePath = path.join(
-      __dirname,
-      '../../uploads',
-      path.basename(photo.image_url)
-    );
-
-    // Delete the file first, then delete the database record
-    fs.unlink(imagePath, (unlinkErr) => {
-      if (unlinkErr) {
-        console.error("Delete file error:", unlinkErr);
-
-        return res.status(500).json({
-          message: 'ไม่สามารถลบไฟล์รูปภาพได้'
-        });
-      }
-
-      db.run("DELETE FROM photos WHERE id = ?", [id], function (dbErr) {
-        if (dbErr) {
-          console.error(dbErr);
-          return res.status(500).json({
-            message: 'Internal Server Error'
-          });
-        }
-
-        res.json({
-          message: 'Deleted successfully'
-        });
-      });
+    await db.query('DELETE FROM photos WHERE id = $1', [id]);
+    res.json({ message: 'Deleted successfully' });
+  } catch (err) {
+    console.error('Delete photo asset failed:', err);
+    res.status(500).json({
+      message: 'ไม่สามารถลบไฟล์รูปภาพได้'
     });
-  });
+  }
 });
 
 export default router;

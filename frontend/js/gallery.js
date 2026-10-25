@@ -242,7 +242,7 @@ function renderMarkers(data) {
         const popupImage = document.createElement('img');
 
         popupImage.className = 'map-popup-image';
-        popupImage.src = `${API_BASE_URL}${photo.image_url}`;
+        popupImage.src = new URL(photo.image_url, API_BASE_URL).href;
         popupImage.alt = photo.title || 'Thailand Gallery photo';
         popupImage.loading = 'lazy';
 
@@ -304,7 +304,7 @@ function renderGallery(data) {
 
         const img = document.createElement('img');
 
-        img.src = `${API_BASE_URL}${photo.image_url}`;
+        img.src = new URL(photo.image_url, API_BASE_URL).href;
         img.alt = photo.title || 'Thailand Gallery photo';
         img.loading = 'lazy';
 

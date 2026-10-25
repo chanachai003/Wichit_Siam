@@ -1,62 +1,20 @@
-import sqlite3 from 'sqlite3';
-const db = new sqlite3.Database('./database.sqlite');
+import 'dotenv/config';
+import pg from 'pg';
 
-//เปิดใช้ Foreign Key (สำคัญมาก)
-db.run("PRAGMA foreign_keys = ON");
+const { Pool } = pg;
+const connectionString = process.env.DATABASE_URL;
 
-db.serialize(() => {
-  // =========================
-  // USERS TABLE
-  // =========================
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+if (!connectionString) {
+  throw new Error('DATABASE_URL is required to connect to Supabase PostgreSQL');
+}
 
-      username TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
+const db = new Pool({
+  connectionString,
+  ssl: { rejectUnauthorized: false }
+});
 
-      role TEXT NOT NULL DEFAULT 'user',
-
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  // =========================
-  // PHOTOS TABLE
-  // =========================
-  db.run(`
-    CREATE TABLE IF NOT EXISTS photos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-      title TEXT NOT NULL,
-      description TEXT NOT NULL,
-
-      province TEXT NOT NULL,
-      region TEXT NOT NULL,
-
-      date TEXT NOT NULL,
-      activity TEXT NOT NULL,
-
-      latitude REAL NOT NULL,
-      longitude REAL NOT NULL,
-
-      image_url TEXT NOT NULL,
-
-      created_by INTEGER NOT NULL,
-
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
-    )
-  `);
-
-  // =========================
-  // INDEX (Performance)
-  // =========================
-  db.run(`CREATE INDEX IF NOT EXISTS idx_photos_province ON photos(province)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_photos_region ON photos(region)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_photos_created_by ON photos(created_by)`);
-
+db.on('error', (error) => {
+  console.error('Unexpected PostgreSQL pool error:', error);
 });
 
 export default db;

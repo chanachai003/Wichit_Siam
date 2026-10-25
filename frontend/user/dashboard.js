@@ -306,7 +306,7 @@
             const card = document.createElement('article');
             card.className = 'gallery-card';
             const image = document.createElement('img');
-            image.src = `${API_BASE_URL}${photo.image_url}`;
+            image.src = new URL(photo.image_url, API_BASE_URL).href;
             image.alt = photo.title || 'ภาพถ่ายของฉัน';
             image.loading = 'lazy';
             // แสดงข้อความสำรองเมื่อโหลดรูปภาพไม่สำเร็จ
