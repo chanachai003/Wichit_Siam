@@ -11,6 +11,99 @@ let allPhotos = [];
 let currentRegion = 'all';
 let currentProvinceSearch = '';
 
+function enablePopupTouchDrag(popupElement) {
+    let activeTouchId = null;
+    let startPoint = null;
+    let lastPoint = null;
+    let isDragging = false;
+
+    const resetTouch = () => {
+        activeTouchId = null;
+        startPoint = null;
+        lastPoint = null;
+        isDragging = false;
+    };
+
+    const handleTouchStart = event => {
+        if (event.touches.length !== 1 || !map.dragging.enabled()) {
+            resetTouch();
+            return;
+        }
+
+        const touch = event.touches[0];
+        activeTouchId = touch.identifier;
+        startPoint = { x: touch.clientX, y: touch.clientY };
+        lastPoint = startPoint;
+        isDragging = false;
+    };
+
+    const handleTouchMove = event => {
+        if (activeTouchId === null) {
+            return;
+        }
+
+        const touch = Array.from(event.touches)
+            .find(item => item.identifier === activeTouchId);
+
+        if (!touch) {
+            return;
+        }
+
+        const point = { x: touch.clientX, y: touch.clientY };
+
+        if (!isDragging) {
+            const distance = Math.hypot(
+                point.x - startPoint.x,
+                point.y - startPoint.y
+            );
+
+            if (distance < 4) {
+                return;
+            }
+
+            isDragging = true;
+        }
+
+        if (event.cancelable) {
+            event.preventDefault();
+        }
+
+        map.panBy([
+            lastPoint.x - point.x,
+            lastPoint.y - point.y
+        ], { animate: false });
+
+        lastPoint = point;
+    };
+
+    const handleTouchEnd = event => {
+        const touchEnded = Array.from(event.changedTouches)
+            .some(touch => touch.identifier === activeTouchId);
+
+        if (touchEnded || event.touches.length === 0) {
+            resetTouch();
+        }
+    };
+
+    popupElement.addEventListener('touchstart', handleTouchStart, {
+        passive: true
+    });
+    document.addEventListener('touchmove', handleTouchMove, {
+        passive: false
+    });
+    document.addEventListener('touchend', handleTouchEnd, { passive: true });
+    document.addEventListener('touchcancel', handleTouchEnd, {
+        passive: true
+    });
+
+    return () => {
+        popupElement.removeEventListener('touchstart', handleTouchStart);
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('touchend', handleTouchEnd);
+        document.removeEventListener('touchcancel', handleTouchEnd);
+    };
+}
+
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap'
@@ -239,12 +332,17 @@ function renderMarkers(data) {
             photo.region
         ].filter(Boolean).join(' • ');
 
+        const popupDescription = document.createElement('p');
+        popupDescription.className = 'map-popup-description';
+        popupDescription.textContent = photo.description || '';
+
         const popupImage = document.createElement('img');
 
         popupImage.className = 'map-popup-image';
         popupImage.src = new URL(photo.image_url, API_BASE_URL).href;
         popupImage.alt = photo.title || 'Thailand Gallery photo';
         popupImage.loading = 'lazy';
+        popupImage.tabIndex = -1;
 
         popupImage.addEventListener('error', () => {
             const placeholder = document.createElement('div');
@@ -264,8 +362,26 @@ function renderMarkers(data) {
         popup.appendChild(popupImage);
         popup.appendChild(popupTitle);
         popup.appendChild(popupLocation);
+        if (popupDescription.textContent) {
+            popup.appendChild(popupDescription);
+        }
 
         marker.bindPopup(popup);
+
+        let removePopupTouchDrag = () => {};
+
+        marker.on('popupopen', () => {
+            popupImage.focus();
+            removePopupTouchDrag();
+            removePopupTouchDrag = enablePopupTouchDrag(
+                marker.getPopup().getElement()
+            );
+        });
+
+        marker.on('popupclose', () => {
+            removePopupTouchDrag();
+            removePopupTouchDrag = () => {};
+        });
 
         marker.on('click', () => {
             marker.openPopup();

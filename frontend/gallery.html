@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Thai Gallery Pro</title>
+    <title>วิจิตรสยาม</title>
 
     <!-- Leaflet ใช้แสดงแผนที่ประเทศไทย -->
     <link
@@ -27,11 +27,16 @@
         <div class="container header-inner">
 
             <div class="brand">
-                <div class="brand-icon">🌄</div>
+                <div class="brand-icon" aria-hidden="true">
+                    <img
+                        src="https://cdn-icons-png.flaticon.com/512/3639/3639364.png"
+                        alt=""
+                    >
+                </div>
 
                 <div>
                     <h1>วิจิตรสยาม</h1>
-                    <p></p>
+                    <p>WICHIT SIAM</p>
                 </div>
             </div>
 
@@ -43,7 +48,7 @@
                 aria-haspopup="dialog"
                 aria-controls="auth-modal"
             >
-                เข้าสู่ระบบ
+                เข้าสู่ระบบ <span aria-hidden="true">↗</span>
             </button>
 
             <!-- แสดงเมนูบัญชีเมื่อเข้าสู่ระบบแล้ว -->
@@ -256,7 +261,11 @@
         <section class="hero">
             <div class="container">
 
-                <h2>Wichit Siam</h2>
+                <div class="hero-kicker">
+                    <span>WICHIT SIAM</span>
+                </div>
+
+                <h2>ฉากชีวิต</h2>
 
                 <p>
                     เก็บภาพ เล่าเรื่อง รำลึกวันวาน
@@ -272,6 +281,7 @@
                 <div class="section-heading">
                     <h2>เลือกภูมิภาค</h2>
                     <p>ค้นหาภาพถ่ายตามภูมิภาคของประเทศไทย</p>
+                    <span class="filter-country">ประเทศไทย</span>
                 </div>
 
                 <div class="province-search">
@@ -281,7 +291,7 @@
                     </label>
 
                     <div class="search-input-wrapper">
-                        <span class="search-icon">🔎</span>
+                        <span class="search-icon" aria-hidden="true">⌕</span>
 
                         <input
                             type="search"
@@ -356,34 +366,20 @@
             </div>
         </section>
 
-        <!-- Map -->
-        <section class="map-section">
-            <div class="container">
-
-                <div class="section-heading">
-                    <h2>🗺️ แผนที่</h2>
-                    <p>ดูตำแหน่งของภาพถ่ายบนแผนที่</p>
-                </div>
-
-                <div id="map"></div>
-
-            </div>
-        </section>
-
         <!-- Gallery -->
         <section class="gallery-section">
             <div class="container">
 
-                <div class="section-heading">
-                    <h2>📸 ภาพวันวาน</h2>
+                <div class="section-heading gallery-heading">
+                    <h2>ภาพวันวาน</h2>
                     <p>ภาพถ่ายจากสถานที่ต่าง ๆ ในประเทศไทย</p>
-                </div>
-
-                <div
-                    id="filter-result-count"
-                    class="filter-result-count"
-                >
-                    พบ 0 ภาพ
+                    <div
+                        id="filter-result-count"
+                        class="filter-result-count"
+                        aria-live="polite"
+                    >
+                        พบ 0 ภาพ
+                    </div>
                 </div>
 
                 <div id="gallery">
@@ -396,14 +392,41 @@
             </div>
         </section>
 
+        <!-- Map -->
+        <section class="map-section">
+            <div class="container">
+
+                <div class="section-heading map-heading">
+                    <h2>แผนที่</h2>
+                    <p>ดูตำแหน่งของภาพถ่ายบนแผนที่</p>
+                </div>
+
+                <div id="map"></div>
+
+            </div>
+        </section>
+
     </main>
 
     <!-- =========================
          Footer
     ========================== -->
     <footer class="site-footer">
-        <div class="container">
+        <div class="container footer-inner">
+            <div>
+                <strong>วิจิตรสยาม</strong>
+                <p>เก็บภาพ เล่าเรื่อง รำลึกวันวาน</p>
+            </div>
+            <span class="footer-mark" aria-hidden="true">◉</span>
             <p>© 2026 Wichit Siam</p>
+            <a
+                class="icon-attribution"
+                href="https://www.flaticon.com/free-icon/wheel_3639364?term=cart+wheel&amp;page=1&amp;position=4&amp;origin=tag&amp;related_id=3639364"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Wheel icon from Flaticon
+            </a>
         </div>
     </footer>
 
