@@ -1319,6 +1319,15 @@ button {
     font-size: 30px;
 }
 
+.gallery-ticket-logo img {
+    display: block;
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    filter: brightness(5) invert(0);
+
+}
+
 .gallery-ticket-brand-name {
     margin: 0;
     color: #e8bf78;
@@ -1907,6 +1916,7 @@ textarea::placeholder {
     overflow: hidden;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
 }
 
 #gallery .image-placeholder {
